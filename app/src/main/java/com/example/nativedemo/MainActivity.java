@@ -31,13 +31,14 @@ public class MainActivity extends AppCompatActivity {
 
         // Example of a call to a native method
         tv = binding.sampleText;
-        tv.setText(stringFromJNI());
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         hour = minute = second = 0;
+        tv.setText(stringFromJNI());
         startTicks();
     }
 
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Keep
-    private void updateTimer() {
+    public void updateTimer() {
         ++second;
         if(second >= 60) {
             ++minute;
