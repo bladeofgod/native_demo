@@ -190,7 +190,7 @@ Java_com_example_nativedemo_MainActivity_startTicks(JNIEnv *env,jobject instance
 
     jclass clz = (*env).GetObjectClass(instance);
 
-    g_ctx.mainActivityClz = clz;
+    g_ctx.mainActivityClz = (jclass) (*env).NewGlobalRef(clz);
     g_ctx.mainActivityObj = (*env).NewGlobalRef(instance);
 
     /*
