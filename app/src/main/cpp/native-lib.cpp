@@ -155,11 +155,12 @@ void* UpdateTicks(void *context){
             //大于1秒
             /*...*/
         }
-        /*..省略代码..*/
-        (*javaVm).DetachCurrentThread();
-        return context;
 
     }
+
+    /*..省略代码..*/
+    (*javaVm).DetachCurrentThread();
+    return context;
 
 
 }
