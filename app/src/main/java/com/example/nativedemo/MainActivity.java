@@ -1,10 +1,17 @@
 package com.example.nativedemo;
 
 import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.nativedemo.databinding.ActivityMainBinding;
 
@@ -22,15 +29,23 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         // Example of a call to a native method
         tv = binding.sampleText;
+        binding.btnJniThread.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this,ThreadActivity.class));
+            }
+        });
 
     }
 
