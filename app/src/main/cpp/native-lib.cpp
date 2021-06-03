@@ -3,6 +3,11 @@
 #include <pthread.h>
 #include <android/log.h>
 
+#include "WIAndroidLog.h"
+#include "WIListener.h"
+#include "unistd.h"
+#include "queue"
+
 // Android log function wrappers
 static const char* kTAG = "hello-jniCallback";
 #define LOGI(...) \
@@ -12,6 +17,16 @@ static const char* kTAG = "hello-jniCallback";
 #define LOGE(...) \
   ((void)__android_log_print(ANDROID_LOG_ERROR, kTAG, __VA_ARGS__))
 
+///======================Jni-thread-demo=================================
+
+
+
+
+
+
+
+
+///====================MainActivity(clock demo)==============================
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_example_nativedemo_MainActivity_stringFromJNI(
