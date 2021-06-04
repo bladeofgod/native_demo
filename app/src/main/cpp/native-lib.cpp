@@ -19,8 +19,126 @@ static const char* kTAG = "hello-jniCallback";
 
 ///======================Jni-thread-demo=================================
 
+/*
+    pthread 文档：
+1、pthread_t :用于声明一个线程对象如：pthread_t thread;
+2、pthread_creat :用于创建一个实际的线程如：pthread_create(&pthread,NULL,threadCallBack,NULL);其总共接收4个参数，第一个参数为pthread_t对象，第二个参数为线程的一些属性我们一般传NULL就行，第三个参数为线程执行的函数（ void* threadCallBack(void *data) ），第四个参数是传递给线程的参数是void*类型的既可以传任意类型。
+3、pthread_exit :用于退出线程如：pthread_exit(&thread)，参数也可以传NULL。注：线程回调函数最后必须调用此方法，不然APP会退出（挂掉）。
+4、pthread_mutex_t :用于创建线程锁对象如：pthread_mutex_t mutex;
+5、pthread_mutex_init :用于初始化pthread_mutex_t锁对象如：pthread_mutex_init(&mutex, NULL);
+6、pthread_mutex_destroy :用于销毁pthread_mutex_t锁对象如：pthread_mutex_destroy(&mutex);
+7、pthread_cond_t :用于创建线程条件对象如：pthread_cond_t cond;
+8、pthread_cond_init :用于初始化pthread_cond_t条件对象如：pthread_cond_init(&cond, NULL);
+9、pthread_cond_destroy :用于销毁pthread_cond_t条件对象如：pthread_cond_destroy(&cond);
+10、pthread_mutex_lock :用于上锁mutex，本线程上锁后的其他变量是不能被别的线程操作的如：pthread_mutex_lock(&mutex);
+11、pthread_mutex_unlock :用于解锁mutex，解锁后的其他变量可以被其他线程操作如：pthread_mutex_unlock(&mutex);
+12、pthread_cond_signal :用于发出条件信号如：pthread_cond_signal(&mutex, &cond);
+13、pthread_cond_wait :用于线程阻塞等待，直到pthread_cond_signal发出条件信号后才执行退出线程阻塞执行后面的操作。
+*/
+
+JavaVM* jvm;
+
+//--------------normal thread-------------------
+pthread_t pthread;
+void* threadDoThings(void* data) {
+    LOGD("jni thread do things...");
+    pthread_exit(&pthread);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_nativedemo_JniThread_normalThread(JNIEnv *env,jobject instance) {
+    LOGD("normal thread");
+    //创建线程
+    pthread_create(&pthread,NULL,threadDoThings,NULL);
+}
+
+//----------------thread lock--------------------
+std::queue<int> queue;//product queue
+pthread_t pthread_product;// product thread
+pthread_t pthread_consumer;// consumer thread
+pthread_mutex_t mutex;//thread lock
+pthread_cond_t cond;// condition of lock
+
+void* productThread(void* data) {
+    while(queue.size() < 50) {
+        //start product
+        LOGD("make a product...");
+        //加锁，确保安全
+        pthread_mutex_lock(&mutex);
+        queue.push(1);
+        if(queue.size() > 0){
+            LOGD("maker notify consumer that a product has been made : %d",queue.size());
+            //notify consumer thread(other wise will block consumer thread...)
+            pthread_cond_signal(&cond);
+        }
+        //解锁
+        pthread_mutex_unlock(&mutex);
+        sleep(4);//unit : second
+    }
+    pthread_exit(&pthread_product);
+}
+
+void *customerThread(void *data) {
+    char *prod = (char *)data;
+    LOGD("%",prod);
+    while (1){
+        pthread_mutex_lock(&mutex);//对queue操作前 加锁
+        if(queue.size() > 0){
+            queue.pop();
+            LOGE("consumer has consume a product...standby for re-product...");
+        } else {
+            LOGE("no product for consume , standby for re-product...");
+            pthread_cond_wait(&cond,&mutex);//阻塞当前线程，等待生产线程
+        }
+        pthread_mutex_unlock(&mutex);//释放锁
+        usleep(500*1000);//单位 微秒  -> 0.5秒
+    }
+    pthread_exit(&pthread_consumer);
+}
 
 
+
+void initMutex() {
+    pthread_mutex_init(&mutex,NULL);//init lock
+    //pthread_mutex_destroy(&mutex);//destroy a lock
+    pthread_cond_init(&cond,NULL);//初始化条件变量
+    //productThread 入口函数
+    pthread_create(&pthread_product,NULL,productThread,(void*)"product");
+    pthread_create(&pthread_consumer,NULL,customerThread,NULL);
+
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_nativedemo_JniThread_mutexThread(JNIEnv *env,jobject instance){
+    for(int i=0;i<8;i++) {
+        queue.push(i);
+    }
+    initMutex();
+}
+
+
+//回调方法
+pthread_t callbackThread;
+
+void *callbackT(void* data) {
+    //获取listener指针
+    WIListener *wiListener = (WIListener *)data;
+    //在子线程中调用回调方法
+    wiListener->onError(1,200,"child thread running success!");
+    pthread_exit(&callbackThread);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_nativedemo_JniThread_callbackThread(JNIEnv *env,jobject instance) {
+    WIListener* wiListener = new WIListener(jvm,env,env->NewGlobalRef(instance));
+    //主线程调用java方法
+    wiListener->onError(0,100,"JNIENV thread running success");
+    //开启子线程  callbackT入口函数, wiListener入口函数的参数
+    pthread_create(&callbackThread,NULL,callbackT,wiListener);
+}
 
 
 
@@ -58,6 +176,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm,void* reserved){
     JNIEnv* env;
     //将 (g_ctx) 内存的起始地址开始一直到结束，全部初始为0
     memset(&g_ctx,0,sizeof(g_ctx));
+    jvm = vm;
 
     //保存 vm
     g_ctx.javaVm = vm;

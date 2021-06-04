@@ -1,10 +1,10 @@
 package com.example.nativedemo;
 
 public class JniThread {
-
-    static {
-        System.loadLibrary("jnithread");
-    }
+//
+//    static {
+//        System.loadLibrary("jnithread");
+//    }
 
 
     //1 一般线程

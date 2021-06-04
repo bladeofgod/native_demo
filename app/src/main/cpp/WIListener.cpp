@@ -19,7 +19,7 @@ WIListener::WIListener(JavaVM *vm, _JNIEnv *env, jobject obj) {
     //对应 jniThread中的onError方法,注意签名要一致
     // I = int   Ljava/lang/String = string   V = 返回void
     // 即 (int code , String msg)
-    jMid = env->GetMethodID(clz,"onError","(ILjava/lang/String;)V");\
+    jMid = env->GetMethodID(clz,"onError","(ILjava/lang/String;)V");
     if(!jMid) {
         LOGE("get jmethodID wrong");
         return;
@@ -46,7 +46,7 @@ void WIListener::onError(int type, int code, const char *msg) {
         jvm->AttachCurrentThread(&env,0);
 
         jstring jmsg = env->NewStringUTF(msg);
-        env->CallVoidMethod(jObj,jMid,code,msg);
+        env->CallVoidMethod(jObj,jMid,code,jmsg);
         env->DeleteLocalRef(jmsg);
         //确保线程可以正常退出
         jvm->DetachCurrentThread();

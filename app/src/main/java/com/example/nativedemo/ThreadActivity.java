@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.view.View;
 import android.widget.Toast;
 
 public class ThreadActivity extends AppCompatActivity {
@@ -49,6 +50,24 @@ public class ThreadActivity extends AppCompatActivity {
                 message.what = code;
                 message.obj = msg;
                 handler.sendMessage(message);
+            }
+        });
+        findViewById(R.id.btn_jniCallback).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                jniCallback();
+            }
+        });
+        findViewById(R.id.btn_normalThread).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                normalThread();
+            }
+        });
+        findViewById(R.id.btn_mutexThread).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mutexThread();
             }
         });
     }
