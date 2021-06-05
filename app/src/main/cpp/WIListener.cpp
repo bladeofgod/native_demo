@@ -27,6 +27,13 @@ WIListener::WIListener(JavaVM *vm, _JNIEnv *env, jobject obj) {
 
 }
 
+WIListener::~WIListener() {
+    delete jvm;
+    delete jEnv;
+    delete jObj;
+    jMid = nullptr;
+}
+
 /*
  * @param type 0:env线程,   1: 子线程
  *
