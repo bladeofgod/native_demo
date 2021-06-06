@@ -52,6 +52,12 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(MainActivity.this,TestActivity.class));
             }
         });
+        findViewById(R.id.btn_oboeActivity).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this,OboeActivity.class));
+            }
+        });
 
     }
 

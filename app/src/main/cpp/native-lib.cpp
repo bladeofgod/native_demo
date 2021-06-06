@@ -3,10 +3,14 @@
 #include <pthread.h>
 #include <android/log.h>
 
+#include "oboe_sine_player.h"
 #include "WIAndroidLog.h"
 #include "WIListener.h"
 #include "unistd.h"
 #include "queue"
+
+
+
 
 // Android log function wrappers
 static const char* kTAG = "hello-jniCallback";
