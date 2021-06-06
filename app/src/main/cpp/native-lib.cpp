@@ -9,7 +9,8 @@
 #include "unistd.h"
 #include "queue"
 
-
+#include "oboe_sine_player.h"
+static OboeSinePlayer * oboePlayer = nullptr ;
 
 
 // Android log function wrappers
@@ -20,6 +21,54 @@ static const char* kTAG = "hello-jniCallback";
   ((void)__android_log_print(ANDROID_LOG_WARN, kTAG, __VA_ARGS__))
 #define LOGE(...) \
   ((void)__android_log_print(ANDROID_LOG_ERROR, kTAG, __VA_ARGS__))
+
+///=======================oboe demo ===================================
+
+
+extern "C" {
+
+/* Create Oboe playback stream
+ * Returns:  0 - success
+ *          -1 - failed
+ */
+JNIEXPORT jint JNICALL Java_com_example_nativedemo_OboeActivity_createStream(
+        JNIEnv *env,jobject instance
+        ) {
+    //new 是创建在堆上的
+    oboePlayer = new OboeSinePlayer();
+    return oboePlayer ? 0 : -1;
+}
+
+JNIEXPORT void JNICALL Java_com_example_nativedemo_OboeActivity_destroyStream(
+        JNIEnv *env,jobject instance) {
+    if(oboePlayer) {
+        delete oboePlayer;
+        oboePlayer = nullptr;
+    }
+}
+
+/*
+ * Play sound with pre-created Oboe stream
+ * returns:  0  - success
+ *          -1  - failed (stream has not created yet )
+ */
+
+JNIEXPORT jint JNICALL Java_com_example_nativedemo_OboeActivity_playSound(
+        JNIEnv *env, jobject instance, jboolean enable) {
+    jint result = 0;
+    if(oboePlayer) {
+        oboePlayer->enable(enable);
+    } else {
+        result = -1;
+    }
+    return result;
+}
+
+
+
+}
+
+
 
 ///======================Jni-thread-demo=================================
 
