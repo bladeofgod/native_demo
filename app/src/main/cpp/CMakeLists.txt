@@ -9,6 +9,9 @@ cmake_minimum_required(VERSION 3.10.2)
 
 project("nativedemo")
 
+add_library(native_app_glue STATIC
+        ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c)
+
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
@@ -22,7 +25,8 @@ add_library( # Sets the name of the library.
 
              # Provides a relative path to your source file(s).
              native-lib.cpp
-             WIListener.cpp)
+             WIListener.cpp
+             main.cpp)
 
 find_package(oboe REQUIRED CONFIG)
 
@@ -38,6 +42,9 @@ find_library( # Sets the name of the path variable.
               # you want CMake to locate.
               log )
 
+# 增加 ${ANDROID_NDK}/sources/android/native_app_glue（私有）
+target_include_directories(native-lib PRIVATE
+        ${ANDROID_NDK}/sources/android/native_app_glue)
 
 
 # Specifies libraries CMake should link to your target library. You
@@ -46,6 +53,10 @@ find_library( # Sets the name of the path variable.
 
 target_link_libraries( # Specifies the target library.
                        native-lib oboe::oboe
+                        android
+                        native_app_glue
+                        EGL
+                        GLESv1_CM
 
                        # Links the target library to the log library
                        # included in the NDK.
