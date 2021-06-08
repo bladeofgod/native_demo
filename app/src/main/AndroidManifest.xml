@@ -21,11 +21,11 @@
         </activity>
 
         <!--native activity-->
-        <activity android:name="android.app.NativeActivity"
+        <activity android:name=".MyNativeActivity"
             android:configChanges="orientation|keyboardHidden">
             <meta-data
                 android:name="android.app.lib_name"
-                android:value="native-lib"/>
+                android:value="native-activity"/>
 
         </activity>
 

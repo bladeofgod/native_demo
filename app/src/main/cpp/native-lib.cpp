@@ -10,19 +10,17 @@
 #include "queue"
 
 
-
 #include "oboe_sine_player.h"
 static OboeSinePlayer * oboePlayer = nullptr ;
 
 
 // Android log function wrappers
-static const char* kTAG = "hello-jniCallback";
+//static const char* kTAG = "hello-jniCallback";
 #define LOGI(...) \
   ((void)__android_log_print(ANDROID_LOG_INFO, kTAG, __VA_ARGS__))
 #define LOGW(...) \
   ((void)__android_log_print(ANDROID_LOG_WARN, kTAG, __VA_ARGS__))
-#define LOGE(...) \
-  ((void)__android_log_print(ANDROID_LOG_ERROR, kTAG, __VA_ARGS__))
+
 
 ///=======================oboe demo ===================================
 
@@ -123,7 +121,7 @@ void* productThread(void* data) {
         pthread_mutex_lock(&mutex);
         queue.push(1);
         if(queue.size() > 0){
-            LOGD("maker notify consumer that a product has been made : %d",queue.size());
+            LOGD("maker notify consumer that a product has been made : %d",(int)queue.size());
             //notify consumer thread(other wise will block consumer thread...)
             pthread_cond_signal(&cond);
         }
@@ -136,7 +134,7 @@ void* productThread(void* data) {
 
 void *customerThread(void *data) {
     char *prod = (char *)data;
-    LOGD("%",prod);
+    LOGD("%s",prod);
     while (1){
         pthread_mutex_lock(&mutex);//对queue操作前 加锁
         if(queue.size() > 0){

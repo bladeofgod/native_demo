@@ -19,8 +19,8 @@
 #include <android/sensor.h>
 #include <android/log.h>
 #include <android_native_app_glue.h>
-#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "native-activity", __VA_ARGS__))
-#define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "native-activity", __VA_ARGS__))
+#define NALOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "native-activity", __VA_ARGS__))
+#define NALOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "native-activity", __VA_ARGS__))
 
 /*
  * 保存的状态
@@ -115,7 +115,7 @@ static int engine_init_display(struct engine* engine) {
     }
 
     if(config == nullptr) {
-        LOGW("unable to initialize EGLConfig");
+        NALOGW("unable to initialize EGLConfig");
         return -1;
     }
 
@@ -125,7 +125,7 @@ static int engine_init_display(struct engine* engine) {
     context = eglCreateContext(display,config, nullptr, nullptr);
 
     if(eglMakeCurrent(display,surface,surface,context) == EGL_FALSE) {
-        LOGW("unable to eglMakeCurrent");
+        NALOGW("unable to eglMakeCurrent");
         return -1;
     }
 
@@ -144,7 +144,7 @@ static int engine_init_display(struct engine* engine) {
 
     for(auto name : opengl_info) {
         auto info = glGetString(name);
-        LOGI("opengl info : %s",info);
+        NALOGI("opengl info : %s",info);
     }
 
     //初始化gl 状态
@@ -292,7 +292,142 @@ dlclose : 关闭动态链接库句柄
 ASensorManager * AcquireASensorManagerInstance(android_app* app) {
     if(!app)
         return nullptr;
+
+    typedef ASensorManager *(*PF_GETINSTANCEFORPACKAGE) (const char *name);
+    //打开动态链接库
+    void* androidHandler = dlopen("libandroid.so",RTLD_NOW);
+
+    auto getInstanceForPackageFunc = (PF_GETINSTANCEFORPACKAGE)
+            dlsym(androidHandler,"ASensorManager_getInstanceForPackage");
+
+    if(getInstanceForPackageFunc) {
+        JNIEnv *env = nullptr;
+        //获取当前app的 jni env
+        app->activity->vm->AttachCurrentThread(&env, nullptr);
+
+        jclass android_content_Context = env->GetObjectClass(app->activity->clazz);
+
+        jmethodID midGetPackageName = env->GetMethodID(android_content_Context,
+                                                       "getPackageName",
+                                                       "()Ljava/lang/String;");
+        auto packageName = (jstring)env->CallObjectMethod(app->activity->clazz,midGetPackageName);
+
+        const char* nativePackageName = env->GetStringUTFChars(packageName, nullptr);
+        //获取对应传感器mgr
+        ASensorManager *mgr = getInstanceForPackageFunc(nativePackageName);
+        env->ReleaseStringUTFChars(packageName,nativePackageName);
+        app->activity->vm->DetachCurrentThread();
+
+        if(mgr) {
+            //关闭库
+            dlclose(androidHandler);
+            return mgr;
+        }
+
+    }
+
+    //别名 - *(*PF_GETINSTANCE)()
+    typedef ASensorManager *(*PF_GETINSTANCE)();
+    auto getInstanceFunc = (PF_GETINSTANCE)
+            dlsym(androidHandler,"ASensorManager_getInstance");
+    assert(getInstanceFunc);
+    dlclose(androidHandler);
+
+    return getInstanceFunc();
 }
+
+/*
+ * native application 的入口，基于android_native_app_glue实现
+ * (native_android.h 是另一种实现方式).
+ * 运行在自有线程，及独立的enent loop
+ *
+ */
+
+void android_main(struct android_app* state) {
+    struct engine engine{};
+
+    memset(&engine,0,sizeof(engine));
+
+    state->userData = &engine;
+    state->onAppCmd = engine_handle_cmd;
+    state->onInputEvent = engine_handle_input;
+    engine.app = state;
+
+    //准备监视accelerometer
+
+    engine.sensorManager = AcquireASensorManagerInstance(state);
+    engine.accelerometerSensor = ASensorManager_getDefaultSensor(
+            engine.sensorManager,
+            ASENSOR_TYPE_ACCELEROMETER
+            );
+    engine.sensorEventQueue = ASensorManager_createEventQueue(
+            engine.sensorManager,
+            state->looper,LOOPER_ID_USER,
+            nullptr, nullptr
+            );
+
+    if(state->savedState != nullptr) {
+        //注意这里的强制转换及取对象
+        engine.state = *(struct saved_state *)state->savedState;
+    }
+
+    //开始loop
+    while(true) {
+        int ident;
+        int events;
+        struct android_poll_source* source;
+        // If not animating, we will block forever waiting for events.
+        // If animating, we loop until all events are read, then continue
+        // to draw the next frame of animation.
+        //拉取所有事件
+        while ((ident = ALooper_pollAll(
+                engine.animation?0:1, nullptr,&events,(void **)&source))
+                >= 0) {
+            //处理事件
+            if(source != nullptr) {
+                source->process(state,source);
+            }
+
+            //处理传感器事件
+            if(ident == LOOPER_ID_USER) {
+                if(engine.accelerometerSensor != nullptr) {
+                    ASensorEvent  event;
+                    while (ASensorEventQueue_getEvents(engine.sensorEventQueue
+                                                       ,&event,1) > 0) {
+                        NALOGI("accelerometer: x=%f y=%f z%f",
+                             event.acceleration.x,event.acceleration.y,
+                             event.acceleration.z);
+                    }
+                }
+            }
+            //检查存活
+            if(state->destroyRequested != 0) {
+                engine_term_display(&engine);
+                return;
+            }
+
+        }
+
+        if(engine.animation) {
+            //事件处理完毕，绘制下一帧动画
+            engine.state.angle += .01f;
+            if(engine.state.angle > 1) {
+                engine.state.angle = 0;
+            }
+
+            //
+            engine_draw_frame(&engine);
+
+        }
+
+
+
+    }
+
+
+}
+
+
 
 
 

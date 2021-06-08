@@ -9,8 +9,29 @@ cmake_minimum_required(VERSION 3.10.2)
 
 project("nativedemo")
 
+#native activity===========================
+set(${CMAKE_C_FLAGS}, "${CMAKE_C_FLAGS}")
 add_library(native_app_glue STATIC
         ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c)
+
+# now build app's shared lib
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -Wall -Werror")
+# Export ANativeActivity_onCreate(),
+set(CMAKE_SHARED_LINKER_FLAGS
+        "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
+add_library(native-activity SHARED main.cpp)
+
+target_include_directories(native-activity PRIVATE
+        ${ANDROID_NDK}/sources/android/native_app_glue)
+
+target_link_libraries(native-activity
+        android
+        native_app_glue
+        EGL
+        GLESv1_CM
+        log)
+
+#native activity============================
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -25,8 +46,7 @@ add_library( # Sets the name of the library.
 
              # Provides a relative path to your source file(s).
              native-lib.cpp
-             WIListener.cpp
-             main.cpp)
+             WIListener.cpp)
 
 find_package(oboe REQUIRED CONFIG)
 
@@ -43,8 +63,8 @@ find_library( # Sets the name of the path variable.
               log )
 
 # 增加 ${ANDROID_NDK}/sources/android/native_app_glue（私有）
-target_include_directories(native-lib PRIVATE
-        ${ANDROID_NDK}/sources/android/native_app_glue)
+#target_include_directories(native-lib PRIVATE
+#        ${ANDROID_NDK}/sources/android/native_app_glue)
 
 
 # Specifies libraries CMake should link to your target library. You
@@ -53,10 +73,6 @@ target_include_directories(native-lib PRIVATE
 
 target_link_libraries( # Specifies the target library.
                        native-lib oboe::oboe
-                        android
-                        native_app_glue
-                        EGL
-                        GLESv1_CM
 
                        # Links the target library to the log library
                        # included in the NDK.
