@@ -8,6 +8,7 @@
 #include "WIListener.h"
 #include "unistd.h"
 #include "queue"
+#include "base_error.h"
 
 
 #include "oboe_sine_player.h"
