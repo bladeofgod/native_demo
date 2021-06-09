@@ -5,6 +5,8 @@
 #include <jni.h>
 #include "WIListener.h"
 #include "WIAndroidLog.h"
+#include "log_formatter.h"
+
 
 WIListener::WIListener(JavaVM *vm, _JNIEnv *env, jobject obj) {
     jvm = vm;

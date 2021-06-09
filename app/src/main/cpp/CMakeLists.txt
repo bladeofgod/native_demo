@@ -33,6 +33,25 @@ target_link_libraries(native-activity
 
 #native activity============================
 
+#native activity plasma demo============================
+# 注意相关依赖不要重复
+add_library(native-plasma SHARED plasma.cpp)
+
+target_include_directories(native-plasma PRIVATE
+        ${ANDROID_NDK}/sources/android/native_app_glue)
+
+target_link_libraries(native-plasma
+        android
+        native_app_glue
+        log
+        m)
+
+
+#native activity plasma demo============================
+
+
+
+
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.

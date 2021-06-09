@@ -10,17 +10,16 @@
 #include "queue"
 #include "base_error.h"
 
-
 #include "oboe_sine_player.h"
 static OboeSinePlayer * oboePlayer = nullptr ;
 
 
 // Android log function wrappers
 //static const char* kTAG = "hello-jniCallback";
-#define LOGI(...) \
-  ((void)__android_log_print(ANDROID_LOG_INFO, kTAG, __VA_ARGS__))
-#define LOGW(...) \
-  ((void)__android_log_print(ANDROID_LOG_WARN, kTAG, __VA_ARGS__))
+#define  LOG_TAG    "libplasma"
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGW(...)  __android_log_print(ANDROID_LOG_WARN,LOG_TAG,__VA_ARGS__)
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 
 ///=======================oboe demo ===================================
